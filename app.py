@@ -179,6 +179,10 @@ if selected == 'Health Bot':
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
+    # Initialize history for Gemini if not exists
+    if "gemini_history" not in st.session_state:
+        st.session_state.gemini_history = []
+
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
@@ -191,33 +195,31 @@ if selected == 'Health Bot':
     # Initialize session state for model
     if "current_model" not in st.session_state:
         st.session_state.current_model = selected_model
-        st.session_state.chat_session = None
-        st.session_state.messages = []
 
-    if "chat_session" not in st.session_state or st.session_state.chat_session is None:
+    # Initialize chat session FRESH every time to avoid serialization errors
+    chat_session = None
+    if google_api_key:
         try:
-            if google_api_key:
-                system_prompt = "You are a helpful medical assistant. You strictly answer only health-related questions. You can answer general medical questions about any disease, symptoms, or health condition. You also have specialized access to predictive models for Diabetes, Heart Disease, and Parkinson's. Use these specific tools ONLY when the user asks for a risk assessment for these three diseases and provides the necessary clinical data. For other health questions, answer using your general medical knowledge."
-                model = genai.GenerativeModel(selected_model, system_instruction=system_prompt, tools=tools)
-                st.session_state.chat_session = model.start_chat(enable_automatic_function_calling=True)
-            else:
-                st.warning("API Key missing.")
+            system_prompt = "You are a helpful medical assistant. You strictly answer only health-related questions. You can answer general medical questions about any disease, symptoms, or health condition. You also have specialized access to predictive models for Diabetes, Heart Disease, and Parkinson's. Use these specific tools ONLY when the user asks for a risk assessment for these three diseases and provides the necessary clinical data. For other health questions, answer using your general medical knowledge."
+            model = genai.GenerativeModel(selected_model, system_instruction=system_prompt, tools=tools)
+            chat_session = model.start_chat(history=st.session_state.gemini_history, enable_automatic_function_calling=True)
         except Exception as e:
-            st.error(f"Failed to initialize chat: {e}")
-
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+             st.error(f"Failed to initialize chat: {e}")
+    else:
+        st.warning("API Key missing.")
 
     if prompt := st.chat_input("What is your health concern?"):
         st.chat_message("user").markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
         try:
-            if st.session_state.chat_session:
-                response = st.session_state.chat_session.send_message(prompt)
+            if chat_session:
+                response = chat_session.send_message(prompt)
                 response_text = response.text
                 
+                # Update history
+                st.session_state.gemini_history = chat_session.history
+
                 with st.chat_message("assistant"):
                     st.markdown(response_text)
                 st.session_state.messages.append({"role": "assistant", "content": response_text})
