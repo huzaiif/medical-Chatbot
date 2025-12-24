@@ -241,21 +241,21 @@ if selected == 'Diabetes Prediction':
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        Pregnancies = st.text_input('Number of Pregnancies')
+        Pregnancies = st.number_input('Number of Pregnancies', min_value=0, step=1)
     with col2:
-        Glucose = st.text_input('Glucose Level')
+        Glucose = st.number_input('Glucose Level', min_value=0)
     with col3:
-        BloodPressure = st.text_input('Blood Pressure value')
+        BloodPressure = st.number_input('Blood Pressure value', min_value=0)
     with col1:
-        SkinThickness = st.text_input('Skin Thickness value')
+        SkinThickness = st.number_input('Skin Thickness value', min_value=0)
     with col2:
-        Insulin = st.text_input('Insulin Level')
+        Insulin = st.number_input('Insulin Level', min_value=0)
     with col3:
-        BMI = st.text_input('BMI value')
+        BMI = st.number_input('BMI value', min_value=0.0, format="%.1f")
     with col1:
-        DiabetesPedigreeFunction = st.text_input('Diabetes Pedigree Function value')
+        DiabetesPedigreeFunction = st.number_input('Diabetes Pedigree Function value', min_value=0.0, format="%.3f")
     with col2:
-        Age = st.text_input('Age of the Person')
+        Age = st.number_input('Age of the Person', min_value=0, step=1)
 
     # Code for Prediction
     diab_diagnosis = ''
@@ -263,8 +263,8 @@ if selected == 'Diabetes Prediction':
     # Creating a button for Prediction
     if st.button('Diabetes Test Result'):
         try:
-            user_input = [float(Pregnancies), float(Glucose), float(BloodPressure), float(SkinThickness), float(Insulin),
-                          float(BMI), float(DiabetesPedigreeFunction), float(Age)]
+            user_input = [Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin,
+                          BMI, DiabetesPedigreeFunction, Age]
             diab_prediction = diabetes_model.predict([user_input])
             if diab_prediction[0] == 1:
                 diab_diagnosis = 'The person is diabetic'
@@ -277,8 +277,6 @@ if selected == 'Diabetes Prediction':
             advice = generate_health_advice("Diabetes", diab_diagnosis, input_summary)
             st.info("💡 **AI Health Advice**")
             st.markdown(advice)
-        except ValueError:
-            st.error("Please enter valid numerical values.")
         except Exception as e:
             st.error(f"An error occurred: {e}")
 
@@ -289,38 +287,38 @@ if selected == 'Heart Disease Prediction':
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        age = st.text_input('Age')
+        age = st.number_input('Age', min_value=0, step=1)
     with col2:
-        sex = st.text_input('Sex (1 = male; 0 = female)')
+        sex = st.number_input('Sex (1 = male; 0 = female)', min_value=0, max_value=1, step=1)
     with col3:
-        cp = st.text_input('Chest Pain types (0, 1, 2, 3)')
+        cp = st.number_input('Chest Pain types (0, 1, 2, 3)', min_value=0, max_value=3, step=1)
     with col1:
-        trestbps = st.text_input('Resting Blood Pressure')
+        trestbps = st.number_input('Resting Blood Pressure', min_value=0)
     with col2:
-        chol = st.text_input('Serum Cholestoral in mg/dl')
+        chol = st.number_input('Serum Cholestoral in mg/dl', min_value=0)
     with col3:
-        fbs = st.text_input('Fasting Blood Sugar > 120 mg/dl (1 = true; 0 = false)')
+        fbs = st.number_input('Fasting Blood Sugar > 120 mg/dl (1 = true; 0 = false)', min_value=0, max_value=1, step=1)
     with col1:
-        restecg = st.text_input('Resting Electrocardiographic results (0, 1, 2)')
+        restecg = st.number_input('Resting Electrocardiographic results (0, 1, 2)', min_value=0, max_value=2, step=1)
     with col2:
-        thalach = st.text_input('Maximum Heart Rate achieved')
+        thalach = st.number_input('Maximum Heart Rate achieved', min_value=0)
     with col3:
-        exang = st.text_input('Exercise Induced Angina (1 = yes; 0 = no)')
+        exang = st.number_input('Exercise Induced Angina (1 = yes; 0 = no)', min_value=0, max_value=1, step=1)
     with col1:
-        oldpeak = st.text_input('ST depression induced by exercise')
+        oldpeak = st.number_input('ST depression induced by exercise', format="%.1f")
     with col2:
-        slope = st.text_input('Slope of the peak exercise ST segment (0, 1, 2)')
+        slope = st.number_input('Slope of the peak exercise ST segment (0, 1, 2)', min_value=0, max_value=2, step=1)
     with col3:
-        ca = st.text_input('Major vessels colored by flourosopy (0-3)')
+        ca = st.number_input('Major vessels colored by flourosopy (0-3)', min_value=0, max_value=3, step=1)
     with col1:
-        thal = st.text_input('thal: 0 = normal; 1 = fixed defect; 2 = reversable defect')
+        thal = st.number_input('thal: 0 = normal; 1 = fixed defect; 2 = reversable defect', min_value=0, max_value=2, step=1)
 
     heart_diagnosis = ''
 
     if st.button('Heart Disease Test Result'):
         try:
-            user_input = [float(age), float(sex), float(cp), float(trestbps), float(chol), float(fbs), float(restecg),
-                          float(thalach), float(exang), float(oldpeak), float(slope), float(ca), float(thal)]
+            user_input = [age, sex, cp, trestbps, chol, fbs, restecg,
+                          thalach, exang, oldpeak, slope, ca, thal]
             heart_prediction = heart_disease_model.predict([user_input])
             if heart_prediction[0] == 1:
                 heart_diagnosis = 'The person is having heart disease'
@@ -329,12 +327,10 @@ if selected == 'Heart Disease Prediction':
             st.success(heart_diagnosis)
             
             # AI Advice
-            input_summary = f"Age: {age}, Cholesterol: {chol}, BP: {trestbps}, Max Heart Rate: {thalach}, Sex: {'Male' if sex=='1' else 'Female'}"
+            input_summary = f"Age: {age}, Cholesterol: {chol}, BP: {trestbps}, Max Heart Rate: {thalach}, Sex: {'Male' if sex==1 else 'Female'}"
             advice = generate_health_advice("Heart Disease", heart_diagnosis, input_summary)
             st.info("💡 **AI Health Advice**")
             st.markdown(advice)
-        except ValueError:
-            st.error("Please enter valid numerical values.")
         except Exception as e:
             st.error(f"An error occurred: {e}")
 
@@ -345,58 +341,58 @@ if selected == "Parkinsons Prediction":
     col1, col2, col3, col4, col5 = st.columns(5)
 
     with col1:
-        fo = st.text_input('MDVP:Fo(Hz)')
+        fo = st.number_input('MDVP:Fo(Hz)', format="%.3f")
     with col2:
-        fhi = st.text_input('MDVP:Fhi(Hz)')
+        fhi = st.number_input('MDVP:Fhi(Hz)', format="%.3f")
     with col3:
-        flo = st.text_input('MDVP:Flo(Hz)')
+        flo = st.number_input('MDVP:Flo(Hz)', format="%.3f")
     with col4:
-        Jitter_percent = st.text_input('MDVP:Jitter(%)')
+        Jitter_percent = st.number_input('MDVP:Jitter(%)', format="%.5f")
     with col5:
-        Jitter_Abs = st.text_input('MDVP:Jitter(Abs)')
+        Jitter_Abs = st.number_input('MDVP:Jitter(Abs)', format="%.5f")
     with col1:
-        RAP = st.text_input('MDVP:RAP')
+        RAP = st.number_input('MDVP:RAP', format="%.5f")
     with col2:
-        PPQ = st.text_input('MDVP:PPQ')
+        PPQ = st.number_input('MDVP:PPQ', format="%.5f")
     with col3:
-        DDP = st.text_input('Jitter:DDP')
+        DDP = st.number_input('Jitter:DDP', format="%.5f")
     with col4:
-        Shimmer = st.text_input('MDVP:Shimmer')
+        Shimmer = st.number_input('MDVP:Shimmer', format="%.5f")
     with col5:
-        Shimmer_dB = st.text_input('MDVP:Shimmer(dB)')
+        Shimmer_dB = st.number_input('MDVP:Shimmer(dB)', format="%.3f")
     with col1:
-        APQ3 = st.text_input('Shimmer:APQ3')
+        APQ3 = st.number_input('Shimmer:APQ3', format="%.5f")
     with col2:
-        APQ5 = st.text_input('Shimmer:APQ5')
+        APQ5 = st.number_input('Shimmer:APQ5', format="%.5f")
     with col3:
-        APQ = st.text_input('MDVP:APQ')
+        APQ = st.number_input('MDVP:APQ', format="%.5f")
     with col4:
-        DDA = st.text_input('Shimmer:DDA')
+        DDA = st.number_input('Shimmer:DDA', format="%.5f")
     with col5:
-        NHR = st.text_input('NHR')
+        NHR = st.number_input('NHR', format="%.5f")
     with col1:
-        HNR = st.text_input('HNR')
+        HNR = st.number_input('HNR', format="%.3f")
     with col2:
-        RPDE = st.text_input('RPDE')
+        RPDE = st.number_input('RPDE', format="%.5f")
     with col3:
-        DFA = st.text_input('DFA')
+        DFA = st.number_input('DFA', format="%.5f")
     with col4:
-        spread1 = st.text_input('spread1')
+        spread1 = st.number_input('spread1', format="%.5f")
     with col5:
-        spread2 = st.text_input('spread2')
+        spread2 = st.number_input('spread2', format="%.5f")
     with col1:
-        D2 = st.text_input('D2')
+        D2 = st.number_input('D2', format="%.5f")
     with col2:
-        PPE = st.text_input('PPE')
+        PPE = st.number_input('PPE', format="%.5f")
 
     parkinsons_diagnosis = ''
 
     if st.button("Parkinson's Test Result"):
         try:
-            user_input = [float(fo), float(fhi), float(flo), float(Jitter_percent), float(Jitter_Abs),
-                          float(RAP), float(PPQ), float(DDP), float(Shimmer), float(Shimmer_dB),
-                          float(APQ3), float(APQ5), float(APQ), float(DDA), float(NHR), float(HNR),
-                          float(RPDE), float(DFA), float(spread1), float(spread2), float(D2), float(PPE)]
+            user_input = [fo, fhi, flo, Jitter_percent, Jitter_Abs,
+                          RAP, PPQ, DDP, Shimmer, Shimmer_dB,
+                          APQ3, APQ5, APQ, DDA, NHR, HNR,
+                          RPDE, DFA, spread1, spread2, D2, PPE]
             parkinsons_prediction = parkinsons_model.predict([user_input])
             if parkinsons_prediction[0] == 1:
                 parkinsons_diagnosis = "The person has Parkinson's disease"
@@ -409,7 +405,5 @@ if selected == "Parkinsons Prediction":
             advice = generate_health_advice("Parkinson's Disease", parkinsons_diagnosis, input_summary)
             st.info("💡 **AI Health Advice**")
             st.markdown(advice)
-        except ValueError:
-            st.error("Please enter valid numerical values.")
         except Exception as e:
             st.error(f"An error occurred: {e}")
