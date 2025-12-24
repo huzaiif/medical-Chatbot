@@ -217,8 +217,9 @@ if selected == 'Health Bot':
                 response = chat_session.send_message(prompt)
                 response_text = response.text
                 
-                # Update history
-                st.session_state.gemini_history = chat_session.history
+                # Update history manually to avoid storing Content objects (protobufs) in session state
+                st.session_state.gemini_history.append({"role": "user", "parts": [prompt]})
+                st.session_state.gemini_history.append({"role": "model", "parts": [response_text]})
 
                 with st.chat_message("assistant"):
                     st.markdown(response_text)
