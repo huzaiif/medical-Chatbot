@@ -14,11 +14,16 @@ st.set_page_config(page_title="Multiple Disease Prediction",
 load_dotenv()
 
 # Configure Gemini API
-google_api_key = os.getenv("GOOGLE_API_KEY")
+# Try to get key from Streamlit secrets (deployment) or environment variables (local)
+if "GOOGLE_API_KEY" in st.secrets:
+    google_api_key = st.secrets["GOOGLE_API_KEY"]
+else:
+    google_api_key = os.getenv("GOOGLE_API_KEY")
+
 if google_api_key:
     genai.configure(api_key=google_api_key)
 else:
-    st.warning("Google API Key not found. Please set GOOGLE_API_KEY in .env file for Health Bot to work.")
+    st.warning("Google API Key not found. Please set GOOGLE_API_KEY in .env file (local) or Streamlit Secrets (cloud).")
 
 # Loading the saved models
 working_dir = os.path.dirname(os.path.abspath(__file__))
