@@ -15,9 +15,12 @@ load_dotenv()
 
 # Configure Gemini API
 # Try to get key from Streamlit secrets (deployment) or environment variables (local)
-if "GOOGLE_API_KEY" in st.secrets:
-    google_api_key = st.secrets["GOOGLE_API_KEY"]
-else:
+try:
+    if "GOOGLE_API_KEY" in st.secrets:
+        google_api_key = st.secrets["GOOGLE_API_KEY"]
+    else:
+        google_api_key = os.getenv("GOOGLE_API_KEY")
+except (FileNotFoundError, Exception):
     google_api_key = os.getenv("GOOGLE_API_KEY")
 
 if google_api_key:
@@ -160,7 +163,62 @@ def generate_health_advice(disease_name, prediction_result, input_data_summary):
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
+        return response.text
+    except Exception as e:
         return f"Could not generate advice: {e}"
+
+def initialize_chat_history():
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    if "gemini_history" not in st.session_state:
+        st.session_state.gemini_history = []
+
+def display_chat_interface():
+    st.markdown("---")
+    st.subheader("💬 Chat with Health Bot")
+    
+    initialize_chat_history()
+    
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    selected_model = "gemini-flash-lite-latest"
+    tools = [predict_diabetes, predict_heart_disease, predict_parkinsons]
+    
+    if google_api_key:
+        try:
+            system_prompt = "You are a helpful medical assistant. You strictly answer only health-related questions. You can answer general medical questions about any disease, symptoms, or health condition. You also have specialized access to predictive models for Diabetes, Heart Disease, and Parkinson's. Use these specific tools ONLY when the user asks for a risk assessment for these three diseases and provides the necessary clinical data. For other health questions, answer using your general medical knowledge."
+            model = genai.GenerativeModel(selected_model, system_instruction=system_prompt, tools=tools)
+            chat_session = model.start_chat(history=st.session_state.gemini_history, enable_automatic_function_calling=True)
+        except Exception as e:
+            st.error(f"Failed to initialize chat: {e}")
+            return
+    else:
+        st.warning("API Key missing.")
+        return
+
+    if prompt := st.chat_input("Ask a follow-up question..."):
+        st.chat_message("user").markdown(prompt)
+        st.session_state.messages.append({"role": "user", "content": prompt})
+
+        try:
+            response = chat_session.send_message(prompt)
+            response_text = response.text
+            
+            # Update history manually
+            st.session_state.gemini_history.append({"role": "user", "parts": [prompt]})
+            st.session_state.gemini_history.append({"role": "model", "parts": [response_text]})
+
+            with st.chat_message("assistant"):
+                st.markdown(response_text)
+            st.session_state.messages.append({"role": "assistant", "content": response_text})
+        except Exception as e:
+            error_str = str(e)
+            if "429" in error_str:
+                st.error("⚠️ **Quota Exceeded**: Please select a different model or try again later.")
+            else:
+                st.error(f"Error: {e}")
 
 # Sidebar for navigation
 with st.sidebar:
@@ -175,66 +233,7 @@ with st.sidebar:
 # Health Bot Page
 if selected == 'Health Bot':
     st.title("Health Bot")
-    
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-
-    # Initialize history for Gemini if not exists
-    if "gemini_history" not in st.session_state:
-        st.session_state.gemini_history = []
-
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
-    # Model Configuration
-    selected_model = "gemini-flash-lite-latest"
-
-    tools = [predict_diabetes, predict_heart_disease, predict_parkinsons]
-
-    # Initialize session state for model
-    if "current_model" not in st.session_state:
-        st.session_state.current_model = selected_model
-
-    # Initialize chat session FRESH every time to avoid serialization errors
-    chat_session = None
-    if google_api_key:
-        try:
-            system_prompt = "You are a helpful medical assistant. You strictly answer only health-related questions. You can answer general medical questions about any disease, symptoms, or health condition. You also have specialized access to predictive models for Diabetes, Heart Disease, and Parkinson's. Use these specific tools ONLY when the user asks for a risk assessment for these three diseases and provides the necessary clinical data. For other health questions, answer using your general medical knowledge."
-            model = genai.GenerativeModel(selected_model, system_instruction=system_prompt, tools=tools)
-            chat_session = model.start_chat(history=st.session_state.gemini_history, enable_automatic_function_calling=True)
-        except Exception as e:
-             st.error(f"Failed to initialize chat: {e}")
-    else:
-        st.warning("API Key missing.")
-
-    if prompt := st.chat_input("What is your health concern?"):
-        st.chat_message("user").markdown(prompt)
-        st.session_state.messages.append({"role": "user", "content": prompt})
-
-        try:
-            if chat_session:
-                response = chat_session.send_message(prompt)
-                response_text = response.text
-                
-                # Update history manually to avoid storing Content objects (protobufs) in session state
-                st.session_state.gemini_history.append({"role": "user", "parts": [prompt]})
-                st.session_state.gemini_history.append({"role": "model", "parts": [response_text]})
-
-                with st.chat_message("assistant"):
-                    st.markdown(response_text)
-                st.session_state.messages.append({"role": "assistant", "content": response_text})
-            else:
-                st.error("Chat session not initialized. Please check API Key.")
-        except Exception as e:
-            error_str = str(e)
-            response_text = f"Error: {e}"
-            if "429" in error_str:
-                response_text = "⚠️ **Quota Exceeded**: Please select a different model."
-            
-            with st.chat_message("assistant"):
-                st.markdown(response_text)
-            st.session_state.messages.append({"role": "assistant", "content": response_text})
+    display_chat_interface()
 
 # Diabetes Prediction Page
 if selected == 'Diabetes Prediction':
@@ -280,8 +279,18 @@ if selected == 'Diabetes Prediction':
             advice = generate_health_advice("Diabetes", diab_diagnosis, input_summary)
             st.info("💡 **AI Health Advice**")
             st.markdown(advice)
+            
+            # Add context to chat history so user can follow up
+            initialize_chat_history()
+            st.session_state.gemini_history.append({"role": "user", "parts": [f"I have just done a Diabetes check. Result: {diab_diagnosis}. Stats: {input_summary}. Advice given: {advice}"]})
+            st.session_state.gemini_history.append({"role": "model", "parts": ["I understand. I'm here to help if you have questions about your diabetes results or the advice."]})
+            st.session_state.messages.append({"role": "assistant", "content": "I've analyzed your results. Feel free to ask any follow-up questions below!"})
+
         except Exception as e:
             st.error(f"An error occurred: {e}")
+
+    # Always show chat interface at bottom
+    display_chat_interface()
 
 # Heart Disease Prediction Page
 if selected == 'Heart Disease Prediction':
@@ -334,8 +343,18 @@ if selected == 'Heart Disease Prediction':
             advice = generate_health_advice("Heart Disease", heart_diagnosis, input_summary)
             st.info("💡 **AI Health Advice**")
             st.markdown(advice)
+
+            # Add context to chat history
+            initialize_chat_history()
+            st.session_state.gemini_history.append({"role": "user", "parts": [f"I have just done a Heart Disease check. Result: {heart_diagnosis}. Stats: {input_summary}. Advice given: {advice}"]})
+            st.session_state.gemini_history.append({"role": "model", "parts": ["I understand. I'm here to help if you have questions about your heart health results."]})
+            st.session_state.messages.append({"role": "assistant", "content": "I've analyzed your results. Feel free to ask any follow-up questions below!"})
+
         except Exception as e:
             st.error(f"An error occurred: {e}")
+            
+    # Always show chat interface
+    display_chat_interface()
 
 # Parkinson's Prediction Page
 if selected == "Parkinsons Prediction":
@@ -408,5 +427,15 @@ if selected == "Parkinsons Prediction":
             advice = generate_health_advice("Parkinson's Disease", parkinsons_diagnosis, input_summary)
             st.info("💡 **AI Health Advice**")
             st.markdown(advice)
+            
+            # Add context to chat history
+            initialize_chat_history()
+            st.session_state.gemini_history.append({"role": "user", "parts": [f"I have just done a Parkinson's check. Result: {parkinsons_diagnosis}. Stats: {input_summary}. Advice given: {advice}"]})
+            st.session_state.gemini_history.append({"role": "model", "parts": ["I understand. I'm here to help if you have questions about your Parkinson's assessment."]})
+            st.session_state.messages.append({"role": "assistant", "content": "I've analyzed your results. Feel free to ask any follow-up questions below!"})
+
         except Exception as e:
             st.error(f"An error occurred: {e}")
+    
+    # Always show chat interface
+    display_chat_interface()
