@@ -5,6 +5,11 @@ import os
 from dotenv import load_dotenv
 import google.generativeai as genai
 
+# Set page configuration
+st.set_page_config(page_title="Multiple Disease Prediction",
+                   layout="wide",
+                   page_icon="🧑‍⚕️")
+
 # Load environment variables
 load_dotenv()
 
@@ -14,11 +19,6 @@ if google_api_key:
     genai.configure(api_key=google_api_key)
 else:
     st.warning("Google API Key not found. Please set GOOGLE_API_KEY in .env file for Health Bot to work.")
-
-# Set page configuration
-st.set_page_config(page_title="Multiple Disease Prediction",
-                   layout="wide",
-                   page_icon="🧑‍⚕️")
 
 # Loading the saved models
 working_dir = os.path.dirname(os.path.abspath(__file__))
