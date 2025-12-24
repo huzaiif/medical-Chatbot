@@ -1,0 +1,6 @@
+streamlit==1.41.0
+scikit-learn==1.5.2
+numpy
+streamlit-option-menu
+google-generativeai
+python-dotenv

@@ -1,0 +1,16 @@
+Scikit-learn version: 1.5.2
+------------------------------
+Loading diabetes_model.sav...
+Type: <class 'sklearn.svm._classes.SVC'>
+Number of features: 8
+------------------------------
+Loading heart_disease_model.sav...
+Type: <class 'sklearn.linear_model._logistic.LogisticRegression'>
+Number of features: 13
+Feature names: ['age' 'sex' 'cp' 'trestbps' 'chol' 'fbs' 'restecg' 'thalach' 'exang'
+ 'oldpeak' 'slope' 'ca' 'thal']
+------------------------------
+Loading parkinsons_model.sav...
+Type: <class 'sklearn.svm._classes.SVC'>
+Number of features: 22
+------------------------------
