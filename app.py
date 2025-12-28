@@ -198,7 +198,7 @@ def display_chat_interface():
         st.warning("API Key missing.")
         return
 
-    if prompt := st.chat_input("Ask a follow-up question..."):
+    if prompt := st.chat_input("Ask a question..."):
         st.chat_message("user").markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
