@@ -4,3 +4,5 @@ numpy
 streamlit-option-menu
 google-generativeai
 python-dotenv
+fastapi
+uvicorn
