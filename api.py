@@ -5,6 +5,10 @@ import os
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 
+load_dotenv()
+
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
 app = FastAPI()
 
 app.add_middleware(
@@ -14,12 +18,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-load_dotenv()
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-
-app = FastAPI()
 
 class ChatRequest(BaseModel):
     message: str
@@ -31,12 +29,9 @@ def chat(req: ChatRequest):
         system_instruction=
         "You are a helpful medical assistant. Be safe, accurate and include disclaimer."
     )
-
     response = model.generate_content(req.message)
     return {"reply": response.text}
-
 
 @app.get("/")
 def home():
     return {"status": "API running"}
-
