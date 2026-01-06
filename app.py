@@ -163,8 +163,6 @@ def generate_health_advice(disease_name, prediction_result, input_data_summary):
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return response.text
-    except Exception as e:
         return f"Could not generate advice: {e}"
 
 def initialize_chat_history():
